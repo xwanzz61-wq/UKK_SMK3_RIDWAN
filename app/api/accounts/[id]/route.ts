@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
+import { hashPassword } from "@/lib/password";
 
 // Setup koneksi Prisma v7 pakai Adapter
 const adapter = new PrismaMariaDb(process.env.DATABASE_URL as string);
@@ -12,18 +13,32 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const account = await prisma.account.findUnique({
-      where: { id: Number(id) },
+    const userId = Number(id);
+    if (!Number.isInteger(userId) || userId < 1) {
+      return NextResponse.json({ error: "ID user tidak valid" }, { status: 400 });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        fullname: true,
+        email: true,
+        role: true,
+        token: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
-    if (!account) {
+    if (!user) {
       return NextResponse.json(
-        { error: "Akun tidak ditemukan" },
+        { error: "User tidak ditemukan" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json(account);
+    return NextResponse.json(user);
   } catch (error) {
     console.error("Error GET account by id:", error);
     return NextResponse.json(
@@ -42,38 +57,74 @@ export async function PUT(
 ) {
   try {
     const { id } = await params;
-    const body = await request.json();
+    const userId = Number(id);
+    if (!Number.isInteger(userId) || userId < 1) {
+      return NextResponse.json({ error: "ID user tidak valid" }, { status: 400 });
+    }
 
-    if (!body?.nama || !body?.email) {
+    const body: unknown = await request.json();
+    if (typeof body !== "object" || body === null) {
       return NextResponse.json(
-        { error: "Nama dan email wajib diisi" },
+        { error: "Data user tidak valid" },
+        { status: 400 }
+      );
+    }
+    const data = body as Record<string, unknown>;
+
+    if (
+      typeof data.fullname !== "string" ||
+      !data.fullname.trim() ||
+      typeof data.email !== "string" ||
+      !data.email.trim()
+    ) {
+      return NextResponse.json(
+        { error: "Nama lengkap dan email wajib diisi" },
+        { status: 400 }
+      );
+    }
+
+    if (data.role !== "user" && data.role !== "admin") {
+      return NextResponse.json(
+        { error: "Role user tidak valid" },
         { status: 400 }
       );
     }
 
     const updateData: {
-      nama: string;
+      fullname: string;
       email: string;
       password?: string;
       role: string;
-      jwt: string | null;
+      token: string | null;
     } = {
-      nama: body.nama,
-      email: body.email,
-      role: body.role || "user",
-      jwt: body.jwt?.trim() ? body.jwt : null,
+      fullname: data.fullname.trim(),
+      email: data.email.trim().toLowerCase(),
+      role: data.role,
+      token:
+        typeof data.token === "string" && data.token.trim()
+          ? data.token.trim()
+          : null,
     };
 
-    if (typeof body.password === "string" && body.password.trim() !== "") {
-      updateData.password = body.password;
+    if (typeof data.password === "string" && data.password.trim() !== "") {
+      updateData.password = await hashPassword(data.password);
     }
 
-    const updatedAccount = await prisma.account.update({
-      where: { id: Number(id) },
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
       data: updateData,
+      select: {
+        id: true,
+        fullname: true,
+        email: true,
+        role: true,
+        token: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
 
-    return NextResponse.json(updatedAccount);
+    return NextResponse.json(updatedUser);
   } catch (error) {
     console.error("Error PUT account:", error);
     return NextResponse.json(
@@ -92,12 +143,16 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+    const userId = Number(id);
+    if (!Number.isInteger(userId) || userId < 1) {
+      return NextResponse.json({ error: "ID user tidak valid" }, { status: 400 });
+    }
 
-    await prisma.account.delete({
-      where: { id: Number(id) },
+    await prisma.user.delete({
+      where: { id: userId },
     });
 
-    return NextResponse.json({ message: "Akun berhasil dihapus" });
+    return NextResponse.json({ message: "User berhasil dihapus" });
   } catch (error) {
     console.error("Error DELETE account:", error);
     return NextResponse.json(

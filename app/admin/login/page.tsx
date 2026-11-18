@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 import { cookies } from "next/headers";
+import { verifyPassword } from "@/lib/password";
 
 export const dynamic = "force-dynamic";
 
@@ -18,9 +19,13 @@ export default async function LoginPage({
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
 
-    const user = await prisma.account.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email } });
 
-    if (!user || user.password !== password) {
+    if (
+      !user ||
+      user.role !== "admin" ||
+      !(await verifyPassword(password, user.password))
+    ) {
       redirect("/admin/login?error=Email atau password salah");
     }
 

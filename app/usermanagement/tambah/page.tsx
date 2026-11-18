@@ -10,11 +10,11 @@ export default function TambahAkunPage() {
 
   // 1. Tambahkan password di state formData
   const [formData, setFormData] = useState({
-    nama: "",
+    fullname: "",
     email: "",
     password: "", // <--- TAMBAHAN
     role: "user",
-    jwt: "",
+    token: "",
   });
 
   async function handleSubmit(e: React.FormEvent) {
@@ -96,8 +96,8 @@ export default function TambahAkunPage() {
                   required
                   placeholder="Masukkan nama lengkap"
                   className="w-full border border-gray-300 p-2.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.nama}
-                  onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                  value={formData.fullname}
+                  onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
                 />
               </div>
 
@@ -146,14 +146,14 @@ export default function TambahAkunPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  JWT (Opsional)
+                  Token (Opsional)
                 </label>
                 <textarea
                   rows={4}
-                  placeholder="Masukkan token JWT jika ada"
+                  placeholder="Masukkan token jika ada"
                   className="w-full border border-gray-300 p-2.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.jwt}
-                  onChange={(e) => setFormData({ ...formData, jwt: e.target.value })}
+                  value={formData.token}
+                  onChange={(e) => setFormData({ ...formData, token: e.target.value })}
                 />
               </div>
 

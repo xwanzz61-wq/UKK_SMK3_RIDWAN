@@ -5,9 +5,33 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
+type UserRow = {
+  id: number;
+  fullname: string;
+  email: string;
+  role: string;
+  token: string | null;
+  createdAt: string;
+};
+
+function isUserRow(value: unknown): value is UserRow {
+  if (typeof value !== "object" || value === null) return false;
+
+  const user = value as Record<string, unknown>;
+  return (
+    typeof user.id === "number" &&
+    typeof user.fullname === "string" &&
+    typeof user.email === "string" &&
+    typeof user.role === "string" &&
+    (typeof user.token === "string" || user.token === null) &&
+    typeof user.createdAt === "string"
+  );
+}
+
 export default function AdminPage() {
-  const [accounts, setAccounts] = useState([]);
-  const [hapusId, setHapusId] = useState(null);
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [hapusId, setHapusId] = useState<number | null>(null);
+  const [loadError, setLoadError] = useState("");
   const router = useRouter();
 
   // Ambil data saat halaman dimuat
@@ -16,9 +40,33 @@ export default function AdminPage() {
   }, []);
 
   async function ambilData() {
-    const res = await fetch("/api/accounts");
-    const data = await res.json();
-    setAccounts(data);
+    try {
+      const res = await fetch("/api/accounts");
+      const data: unknown = await res.json();
+
+      if (!res.ok) {
+        const message =
+          typeof data === "object" &&
+          data !== null &&
+          "error" in data &&
+          typeof data.error === "string"
+            ? data.error
+            : "Gagal mengambil data user.";
+        throw new Error(message);
+      }
+
+      if (!Array.isArray(data) || !data.every(isUserRow)) {
+        throw new Error("Respons server bukan daftar user yang valid.");
+      }
+
+      setUsers(data);
+      setLoadError("");
+    } catch (error) {
+      console.error("Gagal memuat data user:", error);
+      setLoadError(
+        error instanceof Error ? error.message : "Gagal mengambil data user."
+      );
+    }
   }
 
   // Fungsi Hapus
@@ -95,45 +143,51 @@ export default function AdminPage() {
                   <th className="p-3">Nama lengkap</th>
                   <th className="p-3">Email</th>
                   <th className="p-3">Role</th>
-                  <th className="p-3">JWT</th>
+                  <th className="p-3">Token</th>
                   <th className="p-3">Dibuat</th>
                   <th className="p-3">Aksi</th>
                 </tr>
               </thead>
               <tbody>
-                {accounts.length === 0 ? (
+                {loadError ? (
+                  <tr>
+                    <td colSpan={7} className="p-4 text-center text-red-600">
+                      {loadError}
+                    </td>
+                  </tr>
+                ) : users.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="p-4 text-center text-gray-500">
                       Belum ada data.
                     </td>
                   </tr>
                 ) : (
-                  accounts.map((acc: any, index: number) => (
-                    <tr key={acc.id} className="border-t hover:bg-gray-50">
+                  users.map((user, index) => (
+                    <tr key={user.id} className="border-t hover:bg-gray-50">
                       <td className="p-3">{index + 1}</td>
-                      <td className="p-3">{acc.nama}</td>
-                      <td className="p-3">{acc.email}</td>
+                      <td className="p-3">{user.fullname}</td>
+                      <td className="p-3">{user.email}</td>
                       <td className="p-3">
                         <span className="bg-gray-200 px-2 py-1 rounded text-xs">
-                          {acc.role}
+                          {user.role}
                         </span>
                       </td>
                       <td className="p-3 max-w-[150px] truncate text-gray-500">
-                        {acc.jwt || "-"}
+                        {user.token || "-"}
                       </td>
                       <td className="p-3">
-                        {new Date(acc.createdAt).toLocaleDateString("id-ID")}
+                        {new Date(user.createdAt).toLocaleDateString("id-ID")}
                       </td>
                       <td className="p-3 space-x-2">
                         {/* TOMBOL EDIT (Sudah saya perbaiki, sebelumnya malah ke halaman tambah) */}
                         <Link
-                          href={`/usermanagement/edit/${acc.id}`}
+                          href={`/usermanagement/edit/${user.id}`}
                           className="bg-yellow-400 text-white px-3 py-1 rounded inline-block"
                         >
                           Edit
                         </Link>
                         <button
-                          onClick={() => setHapusId(acc.id)}
+                          onClick={() => setHapusId(user.id)}
                           className="bg-red-500 text-white px-3 py-1 rounded"
                         >
                           Hapus

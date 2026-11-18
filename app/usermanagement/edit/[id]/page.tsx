@@ -10,11 +10,11 @@ export default function EditAkunPage() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [formData, setFormData] = useState({
-    nama: "",
+    fullname: "",
     email: "",
     password: "",
     role: "user",
-    jwt: "",
+    token: "",
   });
 
   useEffect(() => {
@@ -28,11 +28,11 @@ export default function EditAkunPage() {
 
         const data = await res.json();
         setFormData({
-          nama: data.nama || "",
+          fullname: data.fullname || "",
           email: data.email || "",
           password: "",
           role: data.role || "user",
-          jwt: data.jwt || "",
+          token: data.token || "",
         });
       } catch (error) {
         console.error(error);
@@ -120,8 +120,8 @@ export default function EditAkunPage() {
                   type="text"
                   required
                   className="w-full border border-gray-300 p-2.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.nama}
-                  onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
+                  value={formData.fullname}
+                  onChange={(e) => setFormData({ ...formData, fullname: e.target.value })}
                 />
               </div>
 
@@ -167,14 +167,14 @@ export default function EditAkunPage() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  JWT (Opsional)
+                  Token (Opsional)
                 </label>
                 <textarea
                   rows={4}
-                  placeholder="Masukkan token JWT jika ada"
+                  placeholder="Masukkan token jika ada"
                   className="w-full border border-gray-300 p-2.5 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={formData.jwt}
-                  onChange={(e) => setFormData({ ...formData, jwt: e.target.value })}
+                  value={formData.token}
+                  onChange={(e) => setFormData({ ...formData, token: e.target.value })}
                 />
               </div>
 
