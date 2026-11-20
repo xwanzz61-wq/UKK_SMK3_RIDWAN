@@ -83,7 +83,7 @@ export async function PUT(
       );
     }
 
-    if (data.role !== "user" && data.role !== "admin") {
+    if (data.role !== "user" && data.role !== "staff" && data.role !== "admin") {
       return NextResponse.json(
         { error: "Role user tidak valid" },
         { status: 400 }

@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     }
 
     const role = data.role === undefined ? "user" : data.role;
-    if (role !== "user" && role !== "admin") {
+    if (role !== "user" && role !== "staff" && role !== "admin") {
       return NextResponse.json(
         { error: "Role user tidak valid" },
         { status: 400 }
